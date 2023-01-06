@@ -40,7 +40,7 @@ from jax import process_index
 from jax import sharding
 from jax.experimental.global_device_array import GlobalDeviceArray
 from jax.experimental.multihost_utils import sync_global_devices
-import orbax.checkpoint as orbax
+#import orbax.checkpoint as orbax
 
 _READ_CHECKPOINT_EVENT: str = '/jax/checkpoint/read/durations_sec'
 _WRITE_CHECKPOINT_EVENT: str = '/jax/checkpoint/write/durations_sec'
@@ -436,7 +436,7 @@ def _save_commit(ckpt_tmp_path: str, ckpt_path: str, base_path: str, keep: int,
   # Remove newer and older invalid checkpoints.
   _remove_invalid_ckpts(ckpt_path, base_path, keep, overwrite,
                         keep_every_n_steps, has_mpa)
-  orbax.utils.record_saved_duration(ckpt_start_time)
+  #orbax.utils.record_saved_duration(ckpt_start_time)
 
 
 
@@ -512,7 +512,7 @@ def save_checkpoint(ckpt_dir: Union[str, os.PathLike],
                     overwrite: bool = False,
                     keep_every_n_steps: Optional[int] = None,
                     async_manager: Optional[AsyncManager] = None,
-                    orbax_checkpointer: Optional[orbax.Checkpointer] = None) -> str:
+                    orbax_checkpointer: Optional[Any] = None) -> str:
   """Save a checkpoint of the model. Suitable for single-host.
 
   In this method, every JAX process saves the checkpoint on its own. Do not
@@ -555,28 +555,28 @@ def save_checkpoint(ckpt_dir: Union[str, os.PathLike],
   ckpt_path, ckpt_tmp_path, base_path = _get_checkpoint_paths(
       ckpt_dir, step, prefix)
 
-  if config.flax_use_orbax_checkpointing or orbax_checkpointer:
-    if jax.process_count() > 1:
-      logging.warning(
-          'Multiple JAX processes detected when saving checkpoint. Please note that only process 0 will execute the save, and you may lose data if the checkpoints saved by other processes contain unique data.'
-      )
-    # Make sure any previous work is done before making file changes.
-    if orbax_checkpointer and isinstance(orbax_checkpointer,
-                                         orbax.AsyncCheckpointer):
-      orbax_checkpointer.wait_until_finished()
-    if not orbax_checkpointer:
-      # If no checkpointer provided, save synchronously with default setting.
-      orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
-    save_args = jax.tree_util.tree_map(lambda x: orbax.SaveArgs(aggregate=True),
-                                       target)
-    orbax_checkpointer.save(
-        ckpt_path, target, save_args=save_args, force=overwrite)
-    _remove_invalid_ckpts(ckpt_path, base_path, keep, overwrite,
-                          keep_every_n_steps, True)
-    end_time = time.time()
-    monitoring.record_event_duration_secs(_WRITE_CHECKPOINT_EVENT,
-                                          end_time - start_time)
-    return ckpt_path
+  #if config.flax_use_orbax_checkpointing or orbax_checkpointer:
+  #  if jax.process_count() > 1:
+  #    logging.warning(
+  #        'Multiple JAX processes detected when saving checkpoint. Please note that only process 0 will execute the save, and you may lose data if the checkpoints saved by other processes contain unique data.'
+  #    )
+  #  # Make sure any previous work is done before making file changes.
+  #  if orbax_checkpointer and isinstance(orbax_checkpointer,
+  #                                       orbax.AsyncCheckpointer):
+  #    orbax_checkpointer.wait_until_finished()
+  #  if not orbax_checkpointer:
+  #    # If no checkpointer provided, save synchronously with default setting.
+  #    orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
+  #  save_args = jax.tree_util.tree_map(lambda x: orbax.SaveArgs(aggregate=True),
+  #                                     target)
+  #  orbax_checkpointer.save(
+  #      ckpt_path, target, save_args=save_args, force=overwrite)
+  #  _remove_invalid_ckpts(ckpt_path, base_path, keep, overwrite,
+  #                        keep_every_n_steps, True)
+  #  end_time = time.time()
+  #  monitoring.record_event_duration_secs(_WRITE_CHECKPOINT_EVENT,
+  #                                        end_time - start_time)
+  #  return ckpt_path
 
   if not overwrite:
     _check_overwrite_error(ckpt_tmp_path, ckpt_path, base_path, step) # type: ignore
@@ -607,7 +607,7 @@ def save_checkpoint_multiprocess(
     keep_every_n_steps: Optional[int] = None,
     async_manager: Optional[AsyncManager] = None,
     gda_manager: Optional[Any] = None,
-    orbax_checkpointer: Optional[orbax.Checkpointer] = None) -> str:
+    orbax_checkpointer: Optional[Any] = None) -> str:
   """Save a checkpoint of the model in multi-process environment.
 
   Use this method to save `GlobalDeviceArray`s, or to save data to a
@@ -659,26 +659,26 @@ def save_checkpoint_multiprocess(
   ckpt_path, ckpt_tmp_path, base_path = _get_checkpoint_paths(
       ckpt_dir, step, prefix)
 
-  if config.flax_use_orbax_checkpointing or orbax_checkpointer:
-    # Make sure any previous work is done before making file changes.
-    if orbax_checkpointer and isinstance(orbax_checkpointer,
-                                         orbax.AsyncCheckpointer):
-      orbax_checkpointer.wait_until_finished()
-    # If no checkpointer provided, save synchronously with default setting.
-    if not orbax_checkpointer:
-      orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
-    if process_index() == 0:
-      _remove_invalid_ckpts(ckpt_path, base_path, keep, overwrite,
-                            keep_every_n_steps, True)
-    save_args = jax.tree_util.tree_map(
-        lambda x: orbax.SaveArgs(
-            aggregate=not _use_multiprocess_serialization(x)), target)
-    orbax_checkpointer.save(
-        ckpt_path, target, save_args=save_args, force=overwrite)
-    end_time = time.time()
-    monitoring.record_event_duration_secs(_WRITE_CHECKPOINT_EVENT,
-                                          end_time - start_time)
-    return ckpt_path
+  #if config.flax_use_orbax_checkpointing or orbax_checkpointer:
+  #  # Make sure any previous work is done before making file changes.
+  #  if orbax_checkpointer and isinstance(orbax_checkpointer,
+  #                                       orbax.AsyncCheckpointer):
+  #    orbax_checkpointer.wait_until_finished()
+  #  # If no checkpointer provided, save synchronously with default setting.
+  #  if not orbax_checkpointer:
+  #    orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
+  #  if process_index() == 0:
+  #    _remove_invalid_ckpts(ckpt_path, base_path, keep, overwrite,
+  #                          keep_every_n_steps, True)
+  #  save_args = jax.tree_util.tree_map(
+  #      lambda x: orbax.SaveArgs(
+  #          aggregate=not _use_multiprocess_serialization(x)), target)
+  #  orbax_checkpointer.save(
+  #      ckpt_path, target, save_args=save_args, force=overwrite)
+  #  end_time = time.time()
+  #  monitoring.record_event_duration_secs(_WRITE_CHECKPOINT_EVENT,
+  #                                        end_time - start_time)
+  #  return ckpt_path
 
   target = serialization.to_state_dict(target)
   target, mpa_targets = _split_mp_arrays(target)
@@ -753,7 +753,7 @@ def restore_checkpoint(
     parallel: bool = True,
     gda_manager: Optional[Any] = None,
     allow_partial_mpa_restoration: bool = False,
-    orbax_checkpointer: Optional[orbax.Checkpointer] = None) -> PyTree:
+    orbax_checkpointer: Optional[Any] = None) -> PyTree:
   """Restore last/best checkpoint from checkpoints in path.
 
   Sorts the checkpoint files naturally, returning the highest-valued
@@ -795,9 +795,9 @@ def restore_checkpoint(
   """
   start_time = time.time()
   # Make sure any previous work is done before checking files.
-  if orbax_checkpointer and isinstance(orbax_checkpointer,
-                                       orbax.AsyncCheckpointer):
-    orbax_checkpointer.wait_until_finished()
+  #if orbax_checkpointer and isinstance(orbax_checkpointer,
+  #                                     orbax.AsyncCheckpointer):
+  #  orbax_checkpointer.wait_until_finished()
 
   ckpt_dir = os.fspath(ckpt_dir)  # Pathlib -> str
   ckpt_dir = safe_normpath(ckpt_dir)
@@ -825,25 +825,25 @@ def restore_checkpoint(
   logging.info('Restoring checkpoint from %s', ckpt_path)
 
   # Restore the checkpoint with Orbax if needed.
-  is_orbax = io.exists(os.path.join(ckpt_path, ORBAX_CKPT_FILENAME))
-  if is_orbax:
-    if not orbax_checkpointer:
-      orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
+  #is_orbax = io.exists(os.path.join(ckpt_path, ORBAX_CKPT_FILENAME))
+  #if is_orbax:
+  #  if not orbax_checkpointer:
+  #    orbax_checkpointer = orbax.Checkpointer(orbax.PyTreeCheckpointHandler())
 
-    def make_restore_args(x):
-      if isinstance(x, GlobalDeviceArray):
-        return orbax.ArrayRestoreArgs(mesh=x.mesh, mesh_axes=x.mesh_axes)
-      return orbax.ArrayRestoreArgs()
+  #  def make_restore_args(x):
+  #    if isinstance(x, GlobalDeviceArray):
+  #      return orbax.ArrayRestoreArgs(mesh=x.mesh, mesh_axes=x.mesh_axes)
+  #    return orbax.ArrayRestoreArgs()
 
-    restore_args = None
-    if target:
-      restore_args = jax.tree_util.tree_map(make_restore_args, target)
-    restored = orbax_checkpointer.restore(
-        ckpt_path, item=target, restore_args=restore_args)
-    end_time = time.time()
-    monitoring.record_event_duration_secs(_READ_CHECKPOINT_EVENT,
-                                          end_time - start_time)
-    return restored
+  #  restore_args = None
+  #  if target:
+  #    restore_args = jax.tree_util.tree_map(make_restore_args, target)
+  #  restored = orbax_checkpointer.restore(
+  #      ckpt_path, item=target, restore_args=restore_args)
+  #  end_time = time.time()
+  #  monitoring.record_event_duration_secs(_READ_CHECKPOINT_EVENT,
+  #                                        end_time - start_time)
+  #  return restored
 
   with io.GFile(ckpt_path, 'rb') as fp:
     if parallel and fp.seekable():
